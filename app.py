@@ -1,4 +1,6 @@
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # 強制 TensorFlow 使用 CPU
+
 import gdown
 import numpy as np
 from flask import Flask, request, jsonify
@@ -11,12 +13,13 @@ app = Flask(__name__)
 MODEL_PATH = "trashnet_model.keras"
 GOOGLE_DRIVE_ID = "1jcL6I7JPSxoEkPf9O019_xCjR2dghRPr"
 
-# 若本地尚未有模型，從 Google Drive 自動下載
+# 自動從 Google Drive 下載模型
 if not os.path.exists(MODEL_PATH):
     print("Downloading model from Google Drive...")
     url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_ID}"
     gdown.download(url, MODEL_PATH, quiet=False)
 
+# 載入模型
 model = load_model(MODEL_PATH)
 CLASS_NAMES = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
