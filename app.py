@@ -1,16 +1,24 @@
+import os
+import gdown
+import numpy as np
 from flask import Flask, request, jsonify
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
-import numpy as np
-import os
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-MODEL_PATH = 'trashnet_model.keras'
-CLASS_NAMES = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
-# 載入模型
+MODEL_PATH = "trashnet_model.keras"
+GOOGLE_DRIVE_ID = "1jcL6I7JPSxoEkPf9O019_xCjR2dghRPr"
+
+# 若本地尚未有模型，從 Google Drive 自動下載
+if not os.path.exists(MODEL_PATH):
+    print("Downloading model from Google Drive...")
+    url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_ID}"
+    gdown.download(url, MODEL_PATH, quiet=False)
+
 model = load_model(MODEL_PATH)
+CLASS_NAMES = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
 def prepare_image(img_path):
     img = image.load_img(img_path, target_size=(128, 128))
@@ -27,7 +35,6 @@ def predict():
     file = request.files['file']
     filename = secure_filename(file.filename)
     file_path = os.path.join("temp", filename)
-
     os.makedirs("temp", exist_ok=True)
     file.save(file_path)
 
@@ -36,8 +43,6 @@ def predict():
         preds = model.predict(img_array)
         pred_class = CLASS_NAMES[np.argmax(preds[0])]
         return jsonify({'result': pred_class})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
     finally:
         os.remove(file_path)
 
